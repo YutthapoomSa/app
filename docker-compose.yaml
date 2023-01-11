@@ -1,0 +1,67 @@
+version: "3"
+services:
+  app:
+    build: .
+    container_name: app
+    ports:
+      - "80:80"
+    volumes:
+      - ./www/:/var/www/html
+      - ./php/php.ini:/usr/local/etc/php/php.ini
+    depends_on:
+      - db
+    restart: always  
+  # Redis
+  redis:
+    image: 'docker.io/bitnami/redis:6.0-debian-10'
+    container_name: redis
+    environment:
+      # ALLOW_EMPTY_PASSWORD is recommended only for development.
+      - ALLOW_EMPTY_PASSWORD=yes
+      - REDIS_DISABLE_COMMANDS=FLUSHDB,FLUSHALL
+    ports:
+      - '6379:6379'
+    restart: always  
+    volumes:
+      - 'redis_data:/bitnami/redis/data'
+  # Redis    
+  
+  database:
+    image: 'mongo'
+    container_name: 'my-mongo-textx'
+    environment:
+      - MONGO_INITDB_DATABASE=textx
+      - MONGO_INITDB_ROOT_USERNAME=freeman
+      - MONGO_INITDB_ROOT_PASSWORD=abcd1234
+    restart: always  
+    volumes:
+      - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+      - ./mongo-volume:/data/db
+    ports:
+      - '27017-27019:27017-27019'
+  db:
+    image: mysql:5.6.17
+    container_name: mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: "dashboard"
+      MYSQL_USER: "app"
+      MYSQL_PASSWORD: "app"
+      MYSQL_ROOT_PASSWORD: "123132123"
+    volumes: 
+      - ./init:/docker-entrypoint-initdb.d  
+      - ./mysql/my.cnf:/etc/mysql/my.cnf
+      - ./data/:/var/data/
+    restart: always  
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    restart: always
+    links: 
+        - db:db
+    ports:
+        - 81:80
+volumes:
+  redis_data:
+    driver: local      
